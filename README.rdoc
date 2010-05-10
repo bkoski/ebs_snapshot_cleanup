@@ -1,18 +1,22 @@
 = ebs_snapshot_cleanup
 
-Description goes here.
+Command-line utility to clean up your EBS snapshots.
 
-== Note on Patches/Pull Requests
- 
-* Fork the project.
-* Make your feature addition or bug fix.
-* Add tests for it. This is important so I don't break it in a
-  future version unintentionally.
-* Commit, do not mess with rakefile, version, or history.
-  (if you want to have your own version, that is fine but
-   bump version in a commit by itself I can ignore when I pull)
-* Send me a pull request. Bonus points for topic branches.
+You'll be prompted before anything is removed.  In this version:
 
-== Copyright
+* every snapshot in the current month is retained
+* last snapshot for every prior month is returned, all others are removed
+  
+In addition, you're prompted to remove snapshots of volumes that no longer exist.
 
-Copyright (c) 2010 Ben Koski. See LICENSE for details.
+== USAGE
+
+Make sure your have an /etc/aws.conf as per aws_credentials[http://github.com/bkoski/aws_credentials]. Then:
+
+  cleanup-ebs-snapshots
+  
+and follow the prompts.
+
+== AUTHOR
+
+Ben Koski, bkoski@nytimes.com

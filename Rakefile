@@ -5,12 +5,15 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "ebs_snapshot_cleanup"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{Command-line utility to clean up EBS snapshots}
+    gem.description = %Q{Command-line utility to clean up EBS snapshots}
     gem.email = "bkoski@nytimes.com"
     gem.homepage = "http://github.com/bkoski/ebs_snapshot_cleanup"
     gem.authors = ["Ben Koski"]
-    gem.add_development_dependency "thoughtbot-shoulda"
+    gem.add_dependency 'amazon-ec2', '0.9.12'
+    gem.add_dependency 'aws_credentials'
+    gem.files = ['bin/cleanup-ebs-snapshots','Rakefile','README.rdoc','VERSION']
+    
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new

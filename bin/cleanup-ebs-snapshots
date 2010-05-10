@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'aws_credentials'
+require 'AWS'
+require 'time'
+
+@ec2 = AWS::EC2::Base.new(:access_key_id => AWSCredentials.access_key,
+                         :secret_access_key => AWSCredentials.secret_access_key)
+
+        
+def get_snapshots_by_volume
+  snapshot_data = @ec2.describe_snapshots(:owner => 'self')['snapshotSet']['item']
+  
+  by_volume = {}
+  snapshot_data.each do |s|
+   by_volume[s['volumeId']] ||= []
+   by_volume[s['volumeId']] << s
+  end
+
+  return by_volume
+end
+        
+active_volume_ids = @ec2.describe_volumes['volumeSet']['item'].collect { |v| v['volumeId'] }
+snapshots_by_volume = get_snapshots_by_volume
+
+(snapshots_by_volume.keys - active_volume_ids).each do |orphaned_volume_id|
+  next unless snapshots_by_volume.has_key?(orphaned_volume_id)
+
+  puts
+  puts "There are #{snapshots_by_volume[orphaned_volume_id].length} snapshot(s) for #{orphaned_volume_id}, which doesn't appear to exist."
+  print "Okay to remove? (y/N) "
+  
+  okay = gets.strip
+  if okay.downcase == 'y'
+    puts "Removing..."
+    snapshots_by_volume[orphaned_volume_id].each { |s| @ec2.delete_snapshot(:snapshot_id => s['snapshotId']) }
+    puts "Done!"
+  end
+end
+
+get_snapshots_by_volume.each do |volume, snapshots|
+
+  snapshots_by_month = {}
+  snaps_to_remove = []
+  snapshots.each do |s|
+    next if s['status'] != 'completed'
+    taken_at = Time.parse(s['startTime'])
+    
+    key = "#{taken_at.year}-#{'%02i' % taken_at.month}"
+    snapshots_by_month[key] ||= []
+    snapshots_by_month[key] << s
+  end
+
+  snapshots_by_month.each do |month, month_snaps|
+    next if month == "#{Time.now.year}-#{'%02i' % Time.now.month}"
+    next if month_snaps.length == 1
+    snaps_to_remove += month_snaps[0, month_snaps.length - 1]
+  end
+  
+  next if snaps_to_remove.length == 0
+  
+  puts
+  puts "Volume: #{volume}"
+  puts "#{snapshots.length} snapshots total, removing #{snaps_to_remove.length}"
+  
+  puts "Snapshots that will remain:"
+  (snapshots - snaps_to_remove).sort { |a,b| a['startTime'] <=> b['startTime'] }.each do |remaining_snap|
+    puts "#{remaining_snap['snapshotId']}\t#{remaining_snap['startTime']}"
+  end
+  
+  puts
+  puts "Snapshots to be removed:"
+  snaps_to_remove.sort { |a,b| a['startTime'] <=> b['startTime'] }.each do |snap_to_remove|
+    puts "#{snap_to_remove['snapshotId']}\t#{snap_to_remove['startTime']}"
+  end
+  
+  puts
+  print "Okay to remove #{snaps_to_remove.length} snapshot(s) for volume #{volume}? (y/N) "
+  okay = gets.strip
+  
+  if okay.downcase == 'y'
+    puts "Removing..."
+    snaps_to_remove.each { |s| @ec2.delete_snapshot(:snapshot_id => s['snapshotId']) }
+    puts "Done!"
+  end
+    
+end
