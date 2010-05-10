@@ -9,6 +9,10 @@ You'll be prompted before anything is removed.  In this version:
   
 In addition, you're prompted to remove snapshots of volumes that no longer exist.
 
+== INSTALL
+
+  gem install ebs_snapshot_cleanup --source http://gemcutter.org
+
 == USAGE
 
 Make sure your have an /etc/aws.conf as per aws_credentials[http://github.com/bkoski/aws_credentials]. Then:
